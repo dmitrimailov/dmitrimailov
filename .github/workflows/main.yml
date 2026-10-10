@@ -2,10 +2,8 @@ name: Update Profile README
 
 on:
   schedule:
-    # Робот будет просыпаться два раза в день: в 00:00 и в 12:00 по UTC.
-    # Этого более чем достаточно, чтобы профиль выглядел живым.
     - cron: '0 0,12 * * *'
-  workflow_dispatch: # Оставляем кнопку для ручного запуска
+  workflow_dispatch:
 
 jobs:
   update-readme:
@@ -14,30 +12,22 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # Скачиваем всю историю, чтобы правильно перезаписать коммит
+          fetch-depth: 0
 
-      - name: Generate fresh content
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11' # Указываем нужную версию Python
+
+      - name: Run Python script
         run: |
-          echo "### Привет! Я настраиваю свой профиль 👋" > README.md
-          echo "" >> README.md
-          echo "Этот профиль обновляется автоматически с помощью GitHub Actions без захламления истории коммитов." >> README.md
-          echo "" >> README.md
-          echo "🕒 **Последнее обновление роботом:** $(date -u +'%Y-%m-%d %H:%M:%S') UTC" >> README.md
+          python update_readme.py # Запускаем наш скрипт
 
       - name: Force Commit and Push
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@://github.com"
-          
-          # Мягко откатываем последний коммит бота в памяти, сохраняя изменения файла
           git reset --soft HEAD~1 || true
-          
-          # Добавляем обновленный README.md
           git add README.md
-          
-          # Создаем новый коммит взамен старого
-          git commit -m "🤖 Робот обновил данные в README (чистая история)" --allow-empty
-          
-          # Принудительно отправляем в GitHub, заменяя старую историю
+          git commit -m "🤖 Робот запустил Python-скрипт" --allow-empty
           git push --force origin main
-
